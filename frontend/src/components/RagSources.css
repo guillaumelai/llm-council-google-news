@@ -1,0 +1,71 @@
+.rag-sources {
+  margin-top: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.rag-sources-toggle {
+  width: 100%;
+  text-align: left;
+  background: #f5f5f5;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+}
+
+.rag-sources-toggle:hover {
+  background: #ebebeb;
+}
+
+.rag-sources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rag-source-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.rag-source-badge {
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.rag-source-title {
+  font-weight: 600;
+  color: #333;
+}
+
+.rag-source-url {
+  color: #4a90e2;
+  text-decoration: none;
+  word-break: break-all;
+  font-size: 12px;
+}
+
+.rag-source-url:hover {
+  text-decoration: underline;
+}
+
+.rag-source-excerpt {
+  width: 100%;
+  color: #888;
+  font-size: 12px;
+  margin-top: 2px;
+}
