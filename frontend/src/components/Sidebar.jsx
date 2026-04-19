@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './Sidebar.css';
 
 export default function Sidebar({
@@ -6,7 +6,17 @@ export default function Sidebar({
   currentConversationId,
   onSelectConversation,
   onNewConversation,
+  onDeleteConversation,
 }) {
+  const [hoveredId, setHoveredId] = useState(null);
+
+  const handleDelete = (e, id) => {
+    e.stopPropagation();
+    if (window.confirm('Delete this conversation?')) {
+      onDeleteConversation(id);
+    }
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -27,13 +37,26 @@ export default function Sidebar({
                 conv.id === currentConversationId ? 'active' : ''
               }`}
               onClick={() => onSelectConversation(conv.id)}
+              onMouseEnter={() => setHoveredId(conv.id)}
+              onMouseLeave={() => setHoveredId(null)}
             >
-              <div className="conversation-title">
-                {conv.title || 'New Conversation'}
+              <div className="conversation-item-content">
+                <div className="conversation-title">
+                  {conv.title || 'New Conversation'}
+                </div>
+                <div className="conversation-meta">
+                  {conv.message_count} messages
+                </div>
               </div>
-              <div className="conversation-meta">
-                {conv.message_count} messages
-              </div>
+              {hoveredId === conv.id && (
+                <button
+                  className="delete-conversation-btn"
+                  onClick={(e) => handleDelete(e, conv.id)}
+                  title="Delete conversation"
+                >
+                  ×
+                </button>
+              )}
             </div>
           ))
         )}
