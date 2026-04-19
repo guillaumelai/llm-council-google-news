@@ -36,6 +36,23 @@
   border-color: #357abd;
 }
 
+.knowledge-base-btn {
+  width: 100%;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #4a90e2;
+  border-radius: 6px;
+  color: #4a90e2;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s, color 0.2s;
+  font-weight: 500;
+  margin-top: 8px;
+}
+.knowledge-base-btn:hover {
+  background: #e8f0fe;
+}
+
 .conversation-list {
   flex: 1;
   overflow-y: auto;

@@ -7,6 +7,7 @@ export default function Sidebar({
   onSelectConversation,
   onNewConversation,
   onDeleteConversation,
+  onToggleKnowledgeBase,
 }) {
   const [hoveredId, setHoveredId] = useState(null);
 
@@ -23,6 +24,9 @@ export default function Sidebar({
         <h1>LLM Council</h1>
         <button className="new-conversation-btn" onClick={onNewConversation}>
           + New Conversation
+        </button>
+        <button className="knowledge-base-btn" onClick={onToggleKnowledgeBase}>
+          Knowledge Base
         </button>
       </div>
 

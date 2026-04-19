@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
+import KnowledgeBase from './components/KnowledgeBase';
 import { api } from './api';
 import './App.css';
 
@@ -9,6 +10,7 @@ function App() {
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [knowledgeBaseOpen, setKnowledgeBaseOpen] = useState(false);
 
   // Load conversations on mount
   useEffect(() => {
@@ -57,6 +59,8 @@ function App() {
     setCurrentConversationId(id);
   };
 
+  const handleToggleKnowledgeBase = () => setKnowledgeBaseOpen((prev) => !prev);
+
   const handleDeleteConversation = async (id) => {
     try {
       await api.deleteConversation(id);
@@ -70,7 +74,7 @@ function App() {
     }
   };
 
-  const handleSendMessage = async (content) => {
+  const handleSendMessage = async (content, useRag = false) => {
     if (!currentConversationId) return;
 
     setIsLoading(true);
@@ -105,6 +109,14 @@ function App() {
       // Send message with streaming
       await api.sendMessageStream(currentConversationId, content, (eventType, event) => {
         switch (eventType) {
+          case 'rag_sources':
+            setCurrentConversation((prev) => {
+              const messages = [...prev.messages];
+              const lastMsg = messages[messages.length - 1];
+              lastMsg.rag_sources = event.data;
+              return { ...prev, messages };
+            });
+            break;
           case 'stage1_start':
             setCurrentConversation((prev) => {
               const messages = [...prev.messages];
@@ -182,7 +194,7 @@ function App() {
           default:
             console.log('Unknown event type:', eventType);
         }
-      });
+      }, useRag);
     } catch (error) {
       console.error('Failed to send message:', error);
       // Remove optimistic messages on error
@@ -202,7 +214,9 @@ function App() {
         onSelectConversation={handleSelectConversation}
         onNewConversation={handleNewConversation}
         onDeleteConversation={handleDeleteConversation}
+        onToggleKnowledgeBase={handleToggleKnowledgeBase}
       />
+      <KnowledgeBase isOpen={knowledgeBaseOpen} onClose={() => setKnowledgeBaseOpen(false)} />
       <ChatInterface
         conversation={currentConversation}
         onSendMessage={handleSendMessage}
