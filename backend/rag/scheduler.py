@@ -29,7 +29,7 @@ async def refresh_feed(feed: dict) -> None:
         1 for d in updated_docs
         if d.get("source_url") == feed_url or d.get("source_url", "").startswith(feed_url)
     )
-    _feeds.update_feed_stats(feed["url"], doc_count + len(new_doc_ids))
+    _feeds.update_feed_stats(feed["url"], doc_count)
 
 
 async def refresh_all_feeds(feed_url: str | None = None) -> None:
