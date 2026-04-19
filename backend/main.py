@@ -269,7 +269,9 @@ async def get_knowledge_document(doc_id: str):
 async def delete_knowledge_document(doc_id: str):
     """Delete a document from the knowledge base."""
     from .rag import store as rag_store
-    rag_store.delete_document(doc_id)
+    deleted = rag_store.delete_document(doc_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Document not found")
     return {"status": "deleted"}
 
 

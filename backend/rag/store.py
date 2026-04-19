@@ -60,8 +60,8 @@ def query(text: str, n_results: int = 5) -> list[dict]:
     return output
 
 
-def delete_document(doc_id: str) -> None:
-    """Delete all chunks belonging to a document."""
+def delete_document(doc_id: str) -> bool:
+    """Delete all chunks belonging to a document. Returns True if found and deleted."""
     collection = _get_collection()
     results = collection.get(
         where={"doc_id": doc_id},
@@ -70,6 +70,8 @@ def delete_document(doc_id: str) -> None:
     ids = results.get("ids", [])
     if ids:
         collection.delete(ids=ids)
+        return True
+    return False
 
 
 def get_document_chunks(doc_id: str) -> dict | None:
