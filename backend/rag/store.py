@@ -32,7 +32,7 @@ def _get_collection():
 def add_documents(chunks: list[str], metadata_list: list[dict]) -> None:
     """Embed and upsert chunks into the collection."""
     collection = _get_collection()
-    if not chunks:
+    if not chunks or not metadata_list:
         return
     doc_id = metadata_list[0]["doc_id"]
     ids = [f"{doc_id}-chunk-{i}" for i in range(len(chunks))]

@@ -91,7 +91,7 @@ def ingest_text(
 async def ingest_url(url: str) -> str:
     """Fetch a URL, extract text, and ingest it. Returns doc_id."""
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, follow_redirects=True)
+        response = await client.get(url, follow_redirects=True, timeout=15)
         html = response.text
 
     soup = BeautifulSoup(html, "html.parser")
