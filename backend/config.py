@@ -28,3 +28,4 @@ DATA_DIR = "data/conversations"
 # RAG configuration
 RAG_CHROMA_DIR = "data/chroma"
 RAG_FEEDS_FILE = "data/feeds.json"
+RAG_TOP_K = 5

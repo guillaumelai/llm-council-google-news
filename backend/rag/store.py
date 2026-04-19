@@ -72,6 +72,26 @@ def delete_document(doc_id: str) -> None:
         collection.delete(ids=ids)
 
 
+def get_document_chunks(doc_id: str) -> dict | None:
+    """Return all chunks and metadata for a given doc_id, or None if not found."""
+    collection = _get_collection()
+    results = collection.get(
+        where={"doc_id": doc_id},
+        include=["documents", "metadatas"],
+    )
+    if not results["ids"]:
+        return None
+    meta = results["metadatas"][0]
+    return {
+        "doc_id": doc_id,
+        "title": meta.get("title", ""),
+        "source_type": meta.get("source_type", ""),
+        "source_url": meta.get("source_url", ""),
+        "created_at": meta.get("created_at", ""),
+        "chunks": results["documents"],
+    }
+
+
 def list_documents() -> list[dict]:
     """Return a deduplicated list of ingested documents with chunk counts."""
     collection = _get_collection()
