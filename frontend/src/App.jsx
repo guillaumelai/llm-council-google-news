@@ -10,7 +10,7 @@ function App() {
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [knowledgeBaseOpen, setKnowledgeBaseOpen] = useState(false);
+  const [view, setView] = useState('chat');
 
   // Load conversations on mount
   useEffect(() => {
@@ -50,6 +50,7 @@ function App() {
         ...conversations,
       ]);
       setCurrentConversationId(newConv.id);
+      setView('chat');
     } catch (error) {
       console.error('Failed to create conversation:', error);
     }
@@ -57,9 +58,10 @@ function App() {
 
   const handleSelectConversation = (id) => {
     setCurrentConversationId(id);
+    setView('chat');
   };
 
-  const handleToggleKnowledgeBase = () => setKnowledgeBaseOpen((prev) => !prev);
+  const handleNavigate = (v) => setView(v);
 
   const handleDeleteConversation = async (id) => {
     try {
@@ -214,14 +216,18 @@ function App() {
         onSelectConversation={handleSelectConversation}
         onNewConversation={handleNewConversation}
         onDeleteConversation={handleDeleteConversation}
-        onToggleKnowledgeBase={handleToggleKnowledgeBase}
+        view={view}
+        onNavigate={handleNavigate}
       />
-      <KnowledgeBase isOpen={knowledgeBaseOpen} onClose={() => setKnowledgeBaseOpen(false)} />
-      <ChatInterface
-        conversation={currentConversation}
-        onSendMessage={handleSendMessage}
-        isLoading={isLoading}
-      />
+      {view === 'knowledge' ? (
+        <KnowledgeBase />
+      ) : (
+        <ChatInterface
+          conversation={currentConversation}
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading}
+        />
+      )}
     </div>
   );
 }

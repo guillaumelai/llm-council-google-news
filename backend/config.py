@@ -27,5 +27,7 @@ DATA_DIR = "data/conversations"
 
 # RAG configuration
 RAG_CHROMA_DIR = "data/chroma"
-RAG_FEEDS_FILE = "data/feeds.json"
 RAG_TOP_K = 5
+
+# Cheap/fast model used to generate article summaries at ingest time
+RAG_SUMMARY_MODEL = "google/gemini-flash-1.5-8b"

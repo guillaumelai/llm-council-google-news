@@ -168,121 +168,85 @@ export const api = {
     return response.json();
   },
 
-  /**
-   * Add text content to the knowledge base.
-   * @param {string} title - The document title
-   * @param {string} text - The text content
-   */
-  async addText(title, text) {
-    const response = await fetch(`${API_BASE}/api/knowledge/text`, {
+  async getFeedLog(limit = 200) {
+    const response = await fetch(`${API_BASE}/api/knowledge/feeds/log?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch feed log');
+    }
+    return response.json();
+  },
+
+  async getKnowledgeStats() {
+    const response = await fetch(`${API_BASE}/api/knowledge/stats`);
+    if (!response.ok) throw new Error('Failed to fetch knowledge base stats');
+    return response.json();
+  },
+
+  async getVectorIndex() {
+    const response = await fetch(`${API_BASE}/api/knowledge/vector-index`);
+    if (!response.ok) throw new Error('Failed to fetch vector index');
+    return response.json();
+  },
+
+  async getGraphData() {
+    const response = await fetch(`${API_BASE}/api/knowledge/graph`);
+    if (!response.ok) throw new Error('Failed to fetch graph data');
+    return response.json();
+  },
+
+  // Google News search methods
+
+  async listGoogleNewsSearches() {
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news`);
+    if (!response.ok) throw new Error('Failed to list Google News searches');
+    return response.json();
+  },
+
+  async addGoogleNewsSearch(keywords, name = '', intervalHours = 1, lookbackDays = 1.0) {
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ title, text }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        keywords,
+        name,
+        interval_hours: intervalHours,
+        lookback_days: lookbackDays,
+      }),
     });
-    if (!response.ok) {
-      throw new Error('Failed to add text');
-    }
+    if (!response.ok) throw new Error('Failed to add Google News search');
     return response.json();
   },
 
-  /**
-   * Add a URL to the knowledge base.
-   * @param {string} url - The URL to fetch and index
-   */
-  async addUrl(url) {
-    const response = await fetch(`${API_BASE}/api/knowledge/url`, {
+  async updateGoogleNewsSearch(id, { keywords, name, intervalHours, lookbackDays }) {
+    const body = {};
+    if (keywords !== undefined) body.keywords = keywords;
+    if (name !== undefined) body.name = name;
+    if (intervalHours !== undefined) body.interval_hours = intervalHours;
+    if (lookbackDays !== undefined) body.lookback_days = lookbackDays;
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error('Failed to update Google News search');
+    return response.json();
+  },
+
+  async deleteGoogleNewsSearch(id) {
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete Google News search');
+    return response.json();
+  },
+
+  async refreshGoogleNewsSearches(id = null) {
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news/refresh`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
     });
-    if (!response.ok) {
-      throw new Error('Failed to add URL');
-    }
-    return response.json();
-  },
-
-  /**
-   * Upload a file to the knowledge base.
-   * @param {File} file - The file to upload
-   */
-  async uploadFile(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch(`${API_BASE}/api/knowledge/file`, {
-      method: 'POST',
-      body: formData,
-    });
-    if (!response.ok) {
-      throw new Error('Failed to upload file');
-    }
-    return response.json();
-  },
-
-  /**
-   * List all RSS/Atom feeds.
-   */
-  async listFeeds() {
-    const response = await fetch(`${API_BASE}/api/knowledge/feeds`);
-    if (!response.ok) {
-      throw new Error('Failed to list feeds');
-    }
-    return response.json();
-  },
-
-  /**
-   * Add an RSS/Atom feed to the knowledge base.
-   * @param {string} url - The feed URL
-   * @param {string} name - The feed name
-   * @param {number} intervalHours - How often to refresh in hours
-   */
-  async addFeed(url, name, intervalHours = 1) {
-    const response = await fetch(`${API_BASE}/api/knowledge/feeds`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url, name, interval_hours: intervalHours }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to add feed');
-    }
-    return response.json();
-  },
-
-  /**
-   * Delete a feed from the knowledge base.
-   * @param {string} url - The feed URL
-   */
-  async deleteFeed(url) {
-    const response = await fetch(
-      `${API_BASE}/api/knowledge/feeds/${encodeURIComponent(url)}`,
-      { method: 'DELETE' }
-    );
-    if (!response.ok) {
-      throw new Error('Failed to delete feed');
-    }
-    return response.json();
-  },
-
-  /**
-   * Refresh feeds in the knowledge base.
-   * @param {string|null} url - Specific feed URL to refresh, or null to refresh all
-   */
-  async refreshFeeds(url = null) {
-    const response = await fetch(`${API_BASE}/api/knowledge/feeds/refresh`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url }),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to refresh feeds');
-    }
+    if (!response.ok) throw new Error('Failed to refresh Google News searches');
     return response.json();
   },
 };

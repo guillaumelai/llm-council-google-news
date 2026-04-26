@@ -1,57 +1,61 @@
-"""APScheduler-based periodic feed refresh scheduler."""
+"""APScheduler-based periodic Google News refresh scheduler."""
 
 from __future__ import annotations
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from . import feeds as _feeds
 from . import store as _store
-from .ingestion import ingest_feed
+from . import log as _log
 
 scheduler = AsyncIOScheduler()
 
 
-async def refresh_feed(feed: dict) -> None:
-    """Refresh a single feed, skipping already-ingested URLs."""
-    # Build seen_urls from existing docs with matching source_url and source_type "rss"
+async def refresh_google_news_search(search: dict) -> None:
+    """Refresh a single Google News keyword search."""
+    from . import google_news as _gn
+    from .ingestion import ingest_feed
+
     all_docs = _store.list_documents()
     seen_urls: set[str] = set()
     for doc in all_docs:
         if doc.get("source_type") in ("rss", "url") and doc.get("source_url"):
             seen_urls.add(doc["source_url"])
 
-    new_doc_ids = await ingest_feed(feed["url"], feed["name"], seen_urls)
+    rss_url = _gn._rss_url(search["keywords"])
+    lookback_days = search.get("lookback_days", 1.0)
 
-    # Compute total doc count for this feed (existing + new)
-    updated_docs = _store.list_documents()
-    feed_url = feed["url"]
-    doc_count = sum(
-        1 for d in updated_docs
-        if d.get("source_url") == feed_url or d.get("source_url", "").startswith(feed_url)
+    result = await ingest_feed(
+        rss_url, search["name"], seen_urls,
+        keywords=search.get("keywords"),
+        lookback_days=lookback_days,
     )
-    _feeds.update_feed_stats(feed["url"], doc_count)
+    result["search_mode"] = "google_news"
+
+    _gn.update_stats(search["id"], result["ingested"])
+    _log.log_feed_refresh(search["name"], rss_url, search["keywords"], lookback_days, result)
 
 
-async def refresh_all_feeds(feed_url: str | None = None) -> None:
-    """Refresh all feeds, or only the feed matching feed_url if provided."""
-    all_feeds = _feeds.load_feeds()
-    if feed_url is not None:
-        all_feeds = [f for f in all_feeds if f["url"] == feed_url]
-    for feed in all_feeds:
-        await refresh_feed(feed)
+async def refresh_all_google_news(search_id: str | None = None) -> None:
+    """Refresh all Google News searches, or only the one with the given ID."""
+    from . import google_news as _gn
+    searches = _gn.load_searches()
+    if search_id is not None:
+        searches = [s for s in searches if s["id"] == search_id]
+    for search in searches:
+        await refresh_google_news_search(search)
 
 
 def start_scheduler() -> None:
-    """Load feeds and schedule periodic refresh jobs, then start the scheduler."""
-    all_feeds = _feeds.load_feeds()
-    for feed in all_feeds:
-        interval_hours = feed.get("interval_hours", 1)
+    """Schedule Google News searches for periodic refresh, then start."""
+    from . import google_news as _gn
+    for search in _gn.load_searches():
+        interval_hours = search.get("interval_hours", 24)
         scheduler.add_job(
-            refresh_feed,
+            refresh_google_news_search,
             trigger="interval",
             hours=interval_hours,
-            args=[feed],
-            id=f"feed_{feed['url']}",
+            args=[search],
+            id=f"gn_{search['id']}",
             replace_existing=True,
         )
     scheduler.start()

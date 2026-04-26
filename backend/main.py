@@ -64,23 +64,55 @@ class Conversation(BaseModel):
     messages: List[Dict[str, Any]]
 
 
-def _format_rag_context(results: list[dict]) -> tuple[str, list[dict]]:
-    """Format query results into context string and sources list."""
-    lines = []
-    sources = []
-    for i, result in enumerate(results, start=1):
-        content = result.get("content", "")
+def _fetch_full_content(url: str) -> str:
+    """Sync: fetch and extract article text via trafilatura."""
+    import trafilatura
+    try:
+        downloaded = trafilatura.fetch_url(url)
+        if downloaded:
+            return trafilatura.extract(downloaded) or ""
+    except Exception:
+        pass
+    return ""
+
+
+async def _format_rag_context(results: list[dict]) -> tuple[str, list[dict]]:
+    """Format query results, fetching fresh full content for URL-based docs."""
+
+    async def _enrich(result: dict) -> tuple[str, dict]:
         meta = result.get("metadata", {})
         title = meta.get("title", "")
-        lines.append(f"{i}. Title: {title}\n{content}")
-        sources.append({
+        source_url = meta.get("source_url", "")
+        stored_content = result.get("content", "")
+        summary = meta.get("summary", "")
+
+        full_content = ""
+        if source_url:
+            try:
+                full_content = await asyncio.wait_for(
+                    asyncio.to_thread(_fetch_full_content, source_url),
+                    timeout=10.0,
+                )
+            except Exception:
+                pass
+
+        content = full_content or stored_content
+        source = {
             "title": title,
             "source_type": meta.get("source_type", ""),
-            "source_url": meta.get("source_url", ""),
-            "excerpt": content[:200],
-        })
-    context_str = "\n\n".join(lines)
-    return context_str, sources
+            "source_url": source_url,
+            "published_date": meta.get("published_date", ""),
+            "source_outlet": meta.get("source_outlet", ""),
+            "keywords_matched": meta.get("keywords_matched", ""),
+            "summary": summary,
+            "excerpt": summary or stored_content[:300],
+        }
+        return f"Title: {title}\n{content}", source
+
+    pairs = await asyncio.gather(*[_enrich(r) for r in results])
+    lines = [f"{i + 1}. {line}" for i, (line, _) in enumerate(pairs)]
+    sources = [src for _, src in pairs]
+    return "\n\n".join(lines), sources
 
 
 @app.get("/")
@@ -194,7 +226,7 @@ async def send_message_stream(conversation_id: str, request: SendMessageRequest)
             if request.use_rag:
                 from .rag import store as rag_store
                 results = rag_store.query(request.content, n_results=RAG_TOP_K)
-                rag_context, sources_list = _format_rag_context(results)
+                rag_context, sources_list = await _format_rag_context(results)
                 yield f"data: {json.dumps({'type': 'rag_sources', 'data': sources_list})}\n\n"
 
             # Stage 1: Collect responses
@@ -275,83 +307,168 @@ async def delete_knowledge_document(doc_id: str):
     return {"status": "deleted"}
 
 
-class IngestTextRequest(BaseModel):
-    title: str
-    text: str
+@app.get("/api/knowledge/feeds/log")
+async def get_feed_log(limit: int = 200):
+    """Return the most recent feed retrieval log entries, newest first."""
+    from .rag import log as rag_log
+    return rag_log.load_entries(limit=limit)
 
 
-@app.post("/api/knowledge/text")
-async def ingest_text_endpoint(body: IngestTextRequest):
-    """Ingest plain text into the knowledge base."""
-    from .rag.ingestion import ingest_text
-    doc_id = ingest_text(body.title, body.text)
-    return {"doc_id": doc_id}
+# ---------------------------------------------------------------------------
+# Google News endpoints
+# ---------------------------------------------------------------------------
 
-
-class IngestUrlRequest(BaseModel):
-    url: str
-
-
-@app.post("/api/knowledge/url")
-async def ingest_url_endpoint(body: IngestUrlRequest):
-    """Fetch and ingest a URL into the knowledge base."""
-    from .rag.ingestion import ingest_url
-    doc_id = await ingest_url(body.url)
-    return {"doc_id": doc_id}
-
-
-@app.post("/api/knowledge/file")
-async def ingest_file_endpoint(file: UploadFile = File(...)):
-    """Ingest an uploaded file (PDF or plain text) into the knowledge base."""
-    from .rag.ingestion import ingest_file
-    content_bytes = await file.read()
-    mime_type = file.content_type or ""
-    doc_id = ingest_file(file.filename or "", content_bytes, mime_type)
-    return {"doc_id": doc_id}
-
-
-@app.get("/api/knowledge/feeds")
-async def list_feeds():
-    """List all configured RSS/Atom feeds."""
-    from .rag import feeds as rag_feeds
-    return rag_feeds.load_feeds()
-
-
-class AddFeedRequest(BaseModel):
-    url: str
-    name: str
+class AddGoogleNewsRequest(BaseModel):
+    keywords: List[str]
+    name: str = ""
     interval_hours: int = 1
+    lookback_days: float = 1.0
 
 
-@app.post("/api/knowledge/feeds")
-async def add_feed_endpoint(body: AddFeedRequest):
-    """Add a new RSS/Atom feed to the knowledge base."""
-    from .rag import feeds as rag_feeds
-    feed = rag_feeds.add_feed(body.url, body.name, body.interval_hours)
-    return feed
+@app.get("/api/knowledge/google-news")
+async def list_google_news():
+    """List all Google News keyword searches."""
+    from .rag import google_news as gn
+    return gn.load_searches()
 
 
-@app.delete("/api/knowledge/feeds/{feed_url:path}")
-async def delete_feed_endpoint(feed_url: str):
-    """Remove a feed by URL (URL-encoded)."""
-    from .rag import feeds as rag_feeds
-    decoded_url = unquote(feed_url)
-    removed = rag_feeds.remove_feed(decoded_url)
+@app.post("/api/knowledge/google-news")
+async def add_google_news(body: AddGoogleNewsRequest):
+    """Add a new Google News keyword search."""
+    from .rag import google_news as gn
+    return gn.add_search(body.keywords, body.name, body.interval_hours, body.lookback_days)
+
+
+class UpdateGoogleNewsRequest(BaseModel):
+    keywords: Optional[List[str]] = None
+    name: Optional[str] = None
+    interval_hours: Optional[int] = None
+    lookback_days: Optional[float] = None
+
+
+@app.patch("/api/knowledge/google-news/{search_id}")
+async def update_google_news(search_id: str, body: UpdateGoogleNewsRequest):
+    """Update an existing Google News search."""
+    from .rag import google_news as gn
+    updated = gn.update_search(
+        search_id,
+        keywords=body.keywords,
+        name=body.name,
+        interval_hours=body.interval_hours,
+        lookback_days=body.lookback_days,
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Search not found")
+    return updated
+
+
+@app.delete("/api/knowledge/google-news/{search_id}")
+async def delete_google_news(search_id: str):
+    """Remove a Google News search by ID."""
+    from .rag import google_news as gn
+    removed = gn.remove_search(search_id)
     if not removed:
-        raise HTTPException(status_code=404, detail="Feed not found")
+        raise HTTPException(status_code=404, detail="Search not found")
     return {"status": "deleted"}
 
 
-class RefreshFeedRequest(BaseModel):
-    url: Optional[str] = None
+class RefreshGoogleNewsRequest(BaseModel):
+    id: Optional[str] = None
 
 
-@app.post("/api/knowledge/feeds/refresh")
-async def refresh_feeds_endpoint(body: RefreshFeedRequest):
-    """Trigger an immediate refresh of all feeds, or a specific feed by URL."""
+@app.post("/api/knowledge/google-news/refresh")
+async def refresh_google_news(body: RefreshGoogleNewsRequest):
+    """Trigger an immediate refresh of all Google News searches, or one by ID."""
     from .rag import scheduler as rag_scheduler
-    await rag_scheduler.refresh_all_feeds(body.url)
+    await rag_scheduler.refresh_all_google_news(body.id)
     return {"status": "refreshed"}
+
+
+@app.get("/api/knowledge/stats")
+async def get_knowledge_stats():
+    """Return operational statistics about the RAG knowledge base."""
+    import os
+    from pathlib import Path
+    from collections import Counter
+    from .rag import store as rag_store
+    from .rag import google_news as rag_gn
+    from .rag import log as rag_log
+    from .config import RAG_CHROMA_DIR
+
+    def dir_size(path: Path) -> int:
+        if not path.exists():
+            return 0
+        return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
+
+    def file_size(path: Path) -> int:
+        return path.stat().st_size if path.exists() else 0
+
+    # ChromaDB paths
+    chroma_path = Path(RAG_CHROMA_DIR).resolve()
+    sqlite_path = chroma_path / "chroma.sqlite3"
+
+    # Collection stats
+    docs = rag_store.list_documents()
+    total_chunks = sum(d.get("chunk_count", 0) for d in docs)
+    source_counts = Counter(d.get("source_type", "unknown") for d in docs)
+
+    # Activity log
+    log_path = Path("data/retrieval_log.jsonl").resolve()
+    log_entries = rag_log.load_entries(limit=10000)
+
+    # Google News
+    gn_searches = rag_gn.load_searches()
+
+    # Storage breakdown (bytes)
+    storage = {
+        "chroma_total": dir_size(chroma_path),
+        "chroma_sqlite": file_size(sqlite_path),
+        "chroma_vectors": dir_size(chroma_path) - file_size(sqlite_path),
+        "activity_log": file_size(log_path),
+        "google_news_config": file_size(Path("data/google_news.json").resolve()),
+        "conversations": dir_size(Path("data/conversations").resolve()),
+    }
+
+    return {
+        "collection": {
+            "total_documents": len(docs),
+            "total_chunks": total_chunks,
+            "avg_chunks_per_doc": round(total_chunks / len(docs), 1) if docs else 0,
+            "by_source_type": dict(source_counts),
+        },
+        "google_news": {
+            "searches": len(gn_searches),
+        },
+        "activity_log": {
+            "path": str(log_path),
+            "entry_count": len(log_entries),
+            "size_bytes": storage["activity_log"],
+        },
+        "storage": storage,
+        "paths": {
+            "chroma_dir": str(chroma_path),
+            "data_dir": str(Path("data").resolve()),
+        },
+        "embedding": {
+            "model": "all-MiniLM-L6-v2",
+            "dimensions": 384,
+            "provider": "sentence-transformers",
+        },
+    }
+
+
+@app.get("/api/knowledge/graph")
+async def get_knowledge_graph():
+    """Return PCA-projected 3D graph data for the vector database."""
+    from .rag import store as rag_store
+    return rag_store.get_graph_data()
+
+
+@app.get("/api/knowledge/vector-index")
+async def get_vector_index():
+    """Return vector index config, nearest-neighbor relationships, and index file details."""
+    from .rag import store as rag_store
+    return rag_store.get_index_stats()
 
 
 if __name__ == "__main__":
