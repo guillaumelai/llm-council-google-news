@@ -1,0 +1,166 @@
+.rag-sources {
+  margin: 12px 0;
+  border: 1px solid #c8e0f4;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 13px;
+  background: #f0f7ff;
+}
+
+.rag-sources-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #e3f0fc;
+  border: none;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #1a5fa8;
+  font-weight: 500;
+  text-align: left;
+}
+
+.rag-sources-header:hover {
+  background: #d5e8f7;
+}
+
+.rag-sources-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rag-sources-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.rag-sources-label {
+  font-weight: 600;
+  color: #1a5fa8;
+}
+
+.rag-sources-count {
+  background: #1a5fa8;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.rag-sources-chevron {
+  font-size: 11px;
+  color: #4a90e2;
+}
+
+.rag-sources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rag-source-item {
+  border-top: 1px solid #d0e8f8;
+  padding: 8px 14px;
+}
+
+.rag-source-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rag-source-badge {
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+
+.rag-source-title {
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+  min-width: 0;
+}
+
+.rag-source-url {
+  color: #4a90e2;
+  text-decoration: none;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.rag-source-url:hover {
+  color: #1a5fa8;
+}
+
+.rag-source-expand {
+  background: none;
+  border: 1px solid #b0ccee;
+  border-radius: 4px;
+  color: #4a90e2;
+  font-size: 11px;
+  padding: 1px 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.rag-source-expand:hover {
+  background: #e3f0fc;
+}
+
+.rag-source-excerpt {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  border-left: 3px solid #4a90e2;
+  border-radius: 0 4px 4px 0;
+  color: #555;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rag-source-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #666;
+}
+
+.rag-source-outlet {
+  font-weight: 600;
+  color: #444;
+}
+
+.rag-source-date {
+  color: #888;
+}
+
+.rag-source-keywords {
+  color: #7c5000;
+  background: #fff8e1;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+}
+
+.rag-source-summary {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #555;
+  line-height: 1.5;
+  font-style: italic;
+}

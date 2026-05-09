@@ -36,6 +36,43 @@
   border-color: #357abd;
 }
 
+.kb-nav-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.kb-nav-btn {
+  flex: 1;
+  padding: 8px 6px;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #666;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.kb-nav-btn:hover {
+  background: #e8f0fe;
+  border-color: #4a90e2;
+  color: #4a90e2;
+}
+
+.kb-nav-btn--active {
+  background: #4a90e2;
+  border-color: #4a90e2;
+  color: #fff;
+}
+
+.kb-nav-btn--active:hover {
+  background: #357abd;
+  border-color: #357abd;
+  color: #fff;
+}
+
 .conversation-list {
   flex: 1;
   overflow-y: auto;

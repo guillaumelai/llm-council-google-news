@@ -5,17 +5,27 @@ from .openrouter import query_models_parallel, query_model
 from .config import COUNCIL_MODELS, CHAIRMAN_MODEL
 
 
-async def stage1_collect_responses(user_query: str) -> List[Dict[str, Any]]:
+async def stage1_collect_responses(
+    user_query: str,
+    rag_context: str | None = None,
+) -> List[Dict[str, Any]]:
     """
     Stage 1: Collect individual responses from all council models.
 
     Args:
         user_query: The user's question
+        rag_context: Optional retrieved context to prepend as a system message
 
     Returns:
         List of dicts with 'model' and 'response' keys
     """
-    messages = [{"role": "user", "content": user_query}]
+    messages = []
+    if rag_context:
+        messages.append({
+            "role": "system",
+            "content": f"Relevant context from knowledge base:\n\n{rag_context}",
+        })
+    messages.append({"role": "user", "content": user_query})
 
     # Query all models in parallel
     responses = await query_models_parallel(COUNCIL_MODELS, messages)
@@ -115,7 +125,8 @@ Now provide your evaluation and ranking:"""
 async def stage3_synthesize_final(
     user_query: str,
     stage1_results: List[Dict[str, Any]],
-    stage2_results: List[Dict[str, Any]]
+    stage2_results: List[Dict[str, Any]],
+    rag_context: str | None = None,
 ) -> Dict[str, Any]:
     """
     Stage 3: Chairman synthesizes final response.
@@ -124,6 +135,7 @@ async def stage3_synthesize_final(
         user_query: The original user query
         stage1_results: Individual model responses from Stage 1
         stage2_results: Rankings from Stage 2
+        rag_context: Optional retrieved context to include in chairman prompt
 
     Returns:
         Dict with 'model' and 'response' keys
@@ -139,10 +151,14 @@ async def stage3_synthesize_final(
         for result in stage2_results
     ])
 
+    rag_section = (
+        f"\nKNOWLEDGE BASE CONTEXT:\n{rag_context}\n"
+        if rag_context else ""
+    )
     chairman_prompt = f"""You are the Chairman of an LLM Council. Multiple AI models have provided responses to a user's question, and then ranked each other's responses.
 
 Original Question: {user_query}
-
+{rag_section}
 STAGE 1 - Individual Responses:
 {stage1_text}
 

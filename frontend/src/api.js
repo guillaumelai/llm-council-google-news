@@ -85,9 +85,10 @@ export const api = {
    * @param {string} conversationId - The conversation ID
    * @param {string} content - The message content
    * @param {function} onEvent - Callback function for each event: (eventType, data) => void
+   * @param {boolean} useRag - Whether to use RAG for context retrieval
    * @returns {Promise<void>}
    */
-  async sendMessageStream(conversationId, content, onEvent) {
+  async sendMessageStream(conversationId, content, onEvent, useRag = false) {
     const response = await fetch(
       `${API_BASE}/api/conversations/${conversationId}/message/stream`,
       {
@@ -95,7 +96,7 @@ export const api = {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, use_rag: useRag }),
       }
     );
 
@@ -125,5 +126,127 @@ export const api = {
         }
       }
     }
+  },
+
+  // Knowledge base methods
+
+  /**
+   * List all documents in the knowledge base.
+   */
+  async listDocuments() {
+    const response = await fetch(`${API_BASE}/api/knowledge/documents`);
+    if (!response.ok) {
+      throw new Error('Failed to list documents');
+    }
+    return response.json();
+  },
+
+  /**
+   * Get a specific document including its chunks.
+   * @param {string} docId - The document ID
+   */
+  async getDocument(docId) {
+    const response = await fetch(`${API_BASE}/api/knowledge/documents/${docId}`);
+    if (!response.ok) {
+      throw new Error('Failed to get document');
+    }
+    return response.json();
+  },
+
+  /**
+   * Delete a document from the knowledge base.
+   * @param {string} docId - The document ID
+   */
+  async deleteDocument(docId) {
+    const response = await fetch(
+      `${API_BASE}/api/knowledge/documents/${docId}`,
+      { method: 'DELETE' }
+    );
+    if (!response.ok) {
+      throw new Error('Failed to delete document');
+    }
+    return response.json();
+  },
+
+  async getFeedLog(limit = 200) {
+    const response = await fetch(`${API_BASE}/api/knowledge/feeds/log?limit=${limit}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch feed log');
+    }
+    return response.json();
+  },
+
+  async getKnowledgeStats() {
+    const response = await fetch(`${API_BASE}/api/knowledge/stats`);
+    if (!response.ok) throw new Error('Failed to fetch knowledge base stats');
+    return response.json();
+  },
+
+  async getVectorIndex() {
+    const response = await fetch(`${API_BASE}/api/knowledge/vector-index`);
+    if (!response.ok) throw new Error('Failed to fetch vector index');
+    return response.json();
+  },
+
+  async getGraphData() {
+    const response = await fetch(`${API_BASE}/api/knowledge/graph`);
+    if (!response.ok) throw new Error('Failed to fetch graph data');
+    return response.json();
+  },
+
+  // Google News search methods
+
+  async listGoogleNewsSearches() {
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news`);
+    if (!response.ok) throw new Error('Failed to list Google News searches');
+    return response.json();
+  },
+
+  async addGoogleNewsSearch(keywords, name = '', intervalHours = 1, lookbackDays = 1.0) {
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        keywords,
+        name,
+        interval_hours: intervalHours,
+        lookback_days: lookbackDays,
+      }),
+    });
+    if (!response.ok) throw new Error('Failed to add Google News search');
+    return response.json();
+  },
+
+  async updateGoogleNewsSearch(id, { keywords, name, intervalHours, lookbackDays }) {
+    const body = {};
+    if (keywords !== undefined) body.keywords = keywords;
+    if (name !== undefined) body.name = name;
+    if (intervalHours !== undefined) body.interval_hours = intervalHours;
+    if (lookbackDays !== undefined) body.lookback_days = lookbackDays;
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error('Failed to update Google News search');
+    return response.json();
+  },
+
+  async deleteGoogleNewsSearch(id) {
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete Google News search');
+    return response.json();
+  },
+
+  async refreshGoogleNewsSearches(id = null) {
+    const response = await fetch(`${API_BASE}/api/knowledge/google-news/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!response.ok) throw new Error('Failed to refresh Google News searches');
+    return response.json();
   },
 };

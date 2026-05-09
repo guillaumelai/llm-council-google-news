@@ -103,10 +103,32 @@
 .input-form {
   display: flex;
   align-items: flex-end;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 24px;
   border-top: 1px solid #e0e0e0;
   background: #fafafa;
+}
+
+.rag-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #555;
+  order: -1;
+}
+
+.rag-toggle label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.rag-toggle input[type="checkbox"] {
+  accent-color: #4a90e2;
 }
 
 .message-input {
