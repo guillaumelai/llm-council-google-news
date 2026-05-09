@@ -1,24 +1,88 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
+# ---- Claude Code ----
+# Personal/local settings — never commit
+.claude/settings.local.json
+.claude/.credentials.json
 
-# Virtual environments
-.venv
+# Per-user state, caches, transcripts, todos
+.claude/cache/
+.claude/sessions/
+.claude/transcripts/
+.claude/todos/
+.claude/projects/
+.claude/statsig/
+.claude/shell-snapshots/
+.claude/ide/
 
-# Keys and secrets
+# Keep these committed (shared across the team) — listed for clarity, do NOT add to ignore:
+#   CLAUDE.md
+#   .claude/settings.json
+#   .claude/agents/
+#   .claude/commands/
+#   .claude/skills/
+#   .claude/hooks/
+
+# Anthropic / SDK noise
+.anthropic/
+*.claude.log
+
+# ---- Secrets & env ----
 .env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+secrets/
 
-# Data files
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Editors / IDEs ----
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- Logs & temp ----
+*.log
+logs/
+tmp/
+.tmp/
+*.tmp
+
+# ---- Node / JS ----
+node_modules/
+.pnp.*
+.yarn/cache
+.yarn/install-state.gz
+dist/
+build/
+.next/
+.turbo/
+.vercel/
+coverage/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+wheels/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Misc build artifacts ----
+*.tsbuildinfo
+.cache/
+
+# ---- Project-specific ----
 data/
-
-# Frontend
-frontend/node_modules/
-frontend/dist/
 frontend/.vite/
-
-# Git worktrees
 .worktrees/
